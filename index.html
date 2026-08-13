@@ -977,9 +977,10 @@ function render() {
   updateSelectOptions();
   const list = document.getElementById('list');
   const count = document.getElementById('count');
+  const priorityRank = (t) => t.type === 'monthly' ? 3 : ({ high: 0, medium: 1, low: 2 }[t.priority] ?? 1);
   const filtered = getFiltered().slice().sort((a,b) => {
     if (a.done !== b.done) return a.done - b.done;
-    return 0; // preserve manual (drag) order within each done/not-done group
+    return priorityRank(a) - priorityRank(b); // A→B→C, monthly last; drag order preserved within each group
   });
 
   count.textContent = `${filtered.length} 件`;
@@ -989,7 +990,7 @@ function render() {
   if (filtered.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.innerHTML = `<div class="big">ここは空っぽ</div><div>新しいタスクを上のフォームから追加してください。</div>`;
+    empty.innerHTML = `<div>新しいタスクを登録してください。</div>`;
     list.appendChild(empty);
     return;
   }
