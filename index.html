@@ -442,6 +442,42 @@
   .row-actions { display: flex; gap: 4px; }
   .row-actions button { background: none; border: none; cursor: pointer; color: var(--ink-soft); font-size: 13px; padding: 2px 4px; }
   .row-actions button:hover { color: var(--clay); }
+
+  /* drag reorder */
+  .drag-handle { cursor: grab; color: var(--ink-soft); font-size: 14px; padding: 0 4px; user-select: none; }
+  .ticket.drag-over { outline: 2px dashed var(--teal); outline-offset: -2px; }
+  table.task-table tr.drag-over td { outline: 2px dashed var(--teal); outline-offset: -2px; }
+
+  /* excluded months */
+  .exclude-months { display: flex; flex-direction: column; gap: 4px; }
+  .exclude-months .field-hint { display: block; margin-bottom: 2px; }
+  select[multiple].month-select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink-soft);
+    height: 92px;
+    width: 92px;
+  }
+
+  /* list-view completion stamp */
+  .table-stamp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--seal);
+    border: 1.5px solid var(--seal);
+    border-radius: 4px;
+    padding: 1px 6px;
+    transform: rotate(-6deg);
+    opacity: 0.85;
+  }
 </style>
 </head>
 <body>
@@ -489,6 +525,10 @@
       </div>
       <input type="date" id="dueInput" title="単発タスクの締め切り日">
       <input type="number" id="monthDayInput" min="1" max="31" placeholder="毎月◯日" style="display:none;" title="月次タスクの締め切り日(1〜31)">
+      <div class="exclude-months" id="excludeMonthsWrap" style="display:none;">
+        <span class="field-hint">除外する月</span>
+        <select id="excludeMonthsInput" class="month-select" multiple></select>
+      </div>
       <select id="priorityInput">
         <option value="medium">優先度: A(重要)</option>
         <option value="high">優先度: S(最優先)</option>
@@ -547,7 +587,19 @@ function setSelectedType(type) {
   const isMonthly = type === 'monthly';
   document.getElementById('dueInput').style.display = isMonthly ? 'none' : '';
   document.getElementById('monthDayInput').style.display = isMonthly ? '' : 'none';
+  document.getElementById('excludeMonthsWrap').style.display = isMonthly ? '' : 'none';
 }
+
+function populateMonthSelect(selectEl) {
+  selectEl.innerHTML = '';
+  for (let m = 1; m <= 12; m++) {
+    const o = document.createElement('option');
+    o.value = m;
+    o.textContent = `${m}月`;
+    selectEl.appendChild(o);
+  }
+}
+populateMonthSelect(document.getElementById('excludeMonthsInput'));
 
 document.querySelectorAll('#typeToggle button').forEach(b => {
   b.addEventListener('click', () => setSelectedType(b.dataset.type));
@@ -597,12 +649,19 @@ function resolveDueDate(task) {
     return new Date(task.due + 'T00:00:00');
   } else {
     if (!task.monthDay) return null;
+    const excl = task.excludeMonths || [];
     const now = new Date();
-    let d = new Date(now.getFullYear(), now.getMonth(), task.monthDay);
-    if (d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-      d = new Date(now.getFullYear(), now.getMonth() + 1, task.monthDay);
+    const year = now.getFullYear();
+    let monthIndex = now.getMonth();
+    const d = new Date(year, monthIndex, task.monthDay);
+    const today = new Date(year, monthIndex, now.getDate());
+    if (d < today) monthIndex += 1;
+    for (let i = 0; i < 24; i++) {
+      const candidate = new Date(year, monthIndex, task.monthDay);
+      if (!excl.includes(candidate.getMonth() + 1)) return candidate;
+      monthIndex += 1;
     }
-    return d;
+    return null;
   }
 }
 
@@ -757,11 +816,13 @@ function openEditModal(task) {
     editType = 'onetime';
     oneBtn.classList.add('active'); monBtn.classList.remove('active');
     dueInput.style.display = ''; monthDayInput.style.display = 'none';
+    excludeWrap.style.display = 'none';
   };
   monBtn.onclick = () => {
     editType = 'monthly';
     monBtn.classList.add('active'); oneBtn.classList.remove('active');
     dueInput.style.display = 'none'; monthDayInput.style.display = '';
+    excludeWrap.style.display = '';
   };
   typeRow.appendChild(oneBtn); typeRow.appendChild(monBtn);
   form.appendChild(typeRow);
@@ -776,6 +837,22 @@ function openEditModal(task) {
   monthDayInput.value = task.monthDay || '';
   monthDayInput.style.display = task.type === 'monthly' ? '' : 'none';
   form.appendChild(monthDayInput);
+
+  const excludeWrap = document.createElement('div');
+  excludeWrap.className = 'exclude-months';
+  excludeWrap.style.display = task.type === 'monthly' ? '' : 'none';
+  const excludeHint = document.createElement('span');
+  excludeHint.className = 'field-hint';
+  excludeHint.textContent = '除外する月';
+  const excludeSelect = document.createElement('select');
+  excludeSelect.className = 'month-select';
+  excludeSelect.multiple = true;
+  populateMonthSelect(excludeSelect);
+  const currentExcl = task.excludeMonths || [];
+  Array.from(excludeSelect.options).forEach(o => { o.selected = currentExcl.includes(parseInt(o.value, 10)); });
+  excludeWrap.appendChild(excludeHint);
+  excludeWrap.appendChild(excludeSelect);
+  form.appendChild(excludeWrap);
 
   const prioritySelect = document.createElement('select');
   prioritySelect.innerHTML = `<option value="medium">優先度: A(重要)</option><option value="high">優先度: S(最優先)</option><option value="low">優先度: B(通常)</option>`;
@@ -825,6 +902,7 @@ function openEditModal(task) {
     task.due = dueInput.value;
     task.monthDay = monthDayInput.value ? parseInt(monthDayInput.value, 10) : null;
     task.priority = prioritySelect.value;
+    task.excludeMonths = Array.from(excludeSelect.selectedOptions).map(o => parseInt(o.value, 10));
     task.method = methodInput.value.trim();
     task.tag = tagInput.value.trim();
     task.submitTo = submitToInput.value.trim();
@@ -858,8 +936,7 @@ function render() {
   const count = document.getElementById('count');
   const filtered = getFiltered().slice().sort((a,b) => {
     if (a.done !== b.done) return a.done - b.done;
-    const order = { high: 0, medium: 1, low: 2 };
-    return order[a.priority] - order[b.priority];
+    return 0; // preserve manual (drag) order within each done/not-done group
   });
 
   count.textContent = `${filtered.length} 件`;
@@ -881,10 +958,40 @@ function render() {
   }
 }
 
+let draggedTaskId = null;
+
+function makeDraggable(el, task) {
+  el.draggable = true;
+  el.addEventListener('dragstart', (e) => {
+    draggedTaskId = task.id;
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    el.classList.remove('drag-over');
+    if (!draggedTaskId || draggedTaskId === task.id) return;
+    const fromIdx = tasks.findIndex(t => t.id === draggedTaskId);
+    const toIdx = tasks.findIndex(t => t.id === task.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = tasks.splice(fromIdx, 1);
+    tasks.splice(tasks.findIndex(t => t.id === task.id) + (fromIdx < toIdx ? 1 : 0), 0, moved);
+    draggedTaskId = null;
+    saveTasks();
+    render();
+  });
+  el.addEventListener('dragend', () => { draggedTaskId = null; });
+}
+
 function renderCardView(filtered, list) {
   filtered.forEach(task => {
     const ticket = document.createElement('div');
     ticket.className = 'ticket' + (task.done ? ' done' : '');
+    makeDraggable(ticket, task);
 
     const stub = document.createElement('div');
     stub.className = `stub p-${task.priority}`;
@@ -942,10 +1049,21 @@ function renderCardView(filtered, list) {
       sTag.textContent = `提出先: ${task.submitTo}`;
       tagRow.appendChild(sTag);
     }
+    if (task.type === 'monthly' && task.excludeMonths && task.excludeMonths.length) {
+      const exTag = document.createElement('span');
+      exTag.className = 'tag';
+      exTag.textContent = `${task.excludeMonths.slice().sort((a,b)=>a-b).join('・')}月は除外`;
+      tagRow.appendChild(exTag);
+    }
     main.appendChild(tagRow);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.title = 'ドラッグで並べ替え';
+    handle.textContent = '⋮⋮';
+    actions.appendChild(handle);
     const edit = document.createElement('button');
     edit.className = 'del';
     edit.title = '編集';
@@ -993,6 +1111,7 @@ function renderTableView(filtered, list) {
     <thead>
       <tr>
         <th></th>
+        <th></th>
         <th>タイトル</th>
         <th>種別</th>
         <th>締切</th>
@@ -1000,6 +1119,7 @@ function renderTableView(filtered, list) {
         <th>方法</th>
         <th>タグ</th>
         <th>提出先</th>
+        <th>状態</th>
         <th></th>
       </tr>
     </thead>
@@ -1009,6 +1129,15 @@ function renderTableView(filtered, list) {
   filtered.forEach(task => {
     const tr = document.createElement('tr');
     if (task.done) tr.classList.add('done');
+    makeDraggable(tr, task);
+
+    const handleTd = document.createElement('td');
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.title = 'ドラッグで並べ替え';
+    handle.textContent = '⋮⋮';
+    handleTd.appendChild(handle);
+    tr.appendChild(handleTd);
 
     const checkTd = document.createElement('td');
     const check = document.createElement('button');
@@ -1031,7 +1160,7 @@ function renderTableView(filtered, list) {
 
     const titleTd = document.createElement('td');
     titleTd.className = 'title-cell';
-    titleTd.textContent = task.title + (task.done ? ' 済' : '');
+    titleTd.textContent = task.title;
     tr.appendChild(titleTd);
 
     const typeTd = document.createElement('td');
@@ -1060,6 +1189,15 @@ function renderTableView(filtered, list) {
     const submitTd = document.createElement('td');
     submitTd.textContent = task.submitTo || '−';
     tr.appendChild(submitTd);
+
+    const statusTd = document.createElement('td');
+    if (task.done) {
+      const stamp = document.createElement('span');
+      stamp.className = 'table-stamp';
+      stamp.textContent = '済';
+      statusTd.appendChild(stamp);
+    }
+    tr.appendChild(statusTd);
 
     const actionsTd = document.createElement('td');
     const rowActions = document.createElement('div');
@@ -1099,7 +1237,9 @@ function downloadIcs(task, dueDate) {
 
   let rrule = '';
   if (task.type === 'monthly') {
-    rrule = `RRULE:FREQ=MONTHLY;BYMONTHDAY=${task.monthDay}\n`;
+    const excl = task.excludeMonths || [];
+    const included = [1,2,3,4,5,6,7,8,9,10,11,12].filter(m => !excl.includes(m));
+    rrule = `RRULE:FREQ=MONTHLY;BYMONTH=${included.join(',')};BYMONTHDAY=${task.monthDay}\n`;
   }
 
   const ics = [
@@ -1146,14 +1286,16 @@ document.getElementById('addBtn').onclick = () => {
   const method = readSelectValue('methodSelect', 'methodInput');
   const tag = readSelectValue('tagSelect', 'tagInput');
   const submitTo = document.getElementById('submitToInput').value.trim();
+  const excludeMonths = Array.from(document.getElementById('excludeMonthsInput').selectedOptions).map(o => parseInt(o.value, 10));
 
   tasks.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    title, type, priority, due, monthDay, method, tag, submitTo, done: false,
+    title, type, priority, due, monthDay, method, tag, submitTo, excludeMonths, done: false,
   });
   titleEl.value = '';
   document.getElementById('dueInput').value = '';
   document.getElementById('monthDayInput').value = '';
+  Array.from(document.getElementById('excludeMonthsInput').options).forEach(o => o.selected = false);
   document.getElementById('methodInput').value = '';
   document.getElementById('methodInput').style.display = 'none';
   document.getElementById('methodSelect').value = '';
