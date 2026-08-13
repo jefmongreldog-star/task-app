@@ -354,6 +354,94 @@
   }
   .modal-cancel { background: #fff; border: 1px solid var(--line); color: var(--ink-soft); }
   .modal-confirm { background: var(--clay); border: 1px solid var(--clay); color: #fff; }
+  .modal-box-wide { max-width: 380px; }
+  .modal-box-wide p { font-weight: 600; font-family: 'Fraunces', serif; font-size: 18px; }
+  .edit-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .edit-form input[type=text], .edit-form input[type=date], .edit-form input[type=number], .edit-form select {
+    font-family: 'IBM Plex Sans JP', sans-serif;
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink);
+    width: 100%;
+  }
+  .edit-form .type-toggle { align-self: flex-start; }
+
+  /* view toggle + table view */
+  .view-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .view-toggle { display: flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; flex-shrink: 0; }
+  .view-toggle button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border: none;
+    background: #fff;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-right: 1px solid var(--line);
+  }
+  .view-toggle button:last-child { border-right: none; }
+  .view-toggle button.active { background: var(--ink); color: var(--card); font-weight: 500; }
+
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow-x: auto;
+    box-shadow: 0 1px 0 var(--line);
+  }
+  table.task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.task-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper-deep);
+    white-space: nowrap;
+  }
+  table.task-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  table.task-table td.title-cell { white-space: normal; min-width: 140px; }
+  table.task-table tr:last-child td { border-bottom: none; }
+  table.task-table tr.done td { color: var(--ink-soft); }
+  table.task-table tr.done td.title-cell { text-decoration: line-through; }
+  table.task-table tr:hover td { background: var(--paper); }
+  .row-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+  }
+  .row-check.checked { background: var(--teal); border-color: var(--teal); }
+  .row-check.checked::after {
+    content: "";
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 3px; height: 7px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .p-pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+  .p-pill.p-high { background: #F1DED3; color: var(--clay); }
+  .p-pill.p-medium { background: var(--slate-soft); color: var(--slate); }
+  .p-pill.p-low { background: var(--teal-soft); color: var(--teal); }
+  .row-actions { display: flex; gap: 4px; }
+  .row-actions button { background: none; border: none; cursor: pointer; color: var(--ink-soft); font-size: 13px; padding: 2px 4px; }
+  .row-actions button:hover { color: var(--clay); }
 </style>
 </head>
 <body>
@@ -393,6 +481,8 @@
       <input type="text" id="titleInput" placeholder="なにをする?" maxlength="120">
     </div>
     <div class="add-row2">
+      <select id="tagSelect"></select>
+      <input type="text" id="tagInput" placeholder="新しいタグを入力" style="display:none; width:110px;">
       <div class="type-toggle" id="typeToggle">
         <button type="button" class="t-onetime active" data-type="onetime">単発</button>
         <button type="button" class="t-monthly" data-type="monthly">月次</button>
@@ -407,14 +497,19 @@
     </div>
     <div class="add-row3">
       <select id="methodSelect"></select>
-      <input type="text" id="methodInput" placeholder="新しい達成方法を入力" style="display:none; width:150px;">
-      <select id="tagSelect"></select>
-      <input type="text" id="tagInput" placeholder="新しいタグを入力" style="display:none; width:110px;">
+      <input type="text" id="methodInput" placeholder="新しい方法を入力" style="display:none; width:150px;">
+      <input type="text" id="submitToInput" placeholder="提出先(任意)" style="width:130px;">
       <button class="add-btn" id="addBtn">追加する</button>
     </div>
   </div>
 
-  <div class="filters" id="filters"></div>
+  <div class="view-row">
+    <div class="filters" id="filters"></div>
+    <div class="view-toggle" id="viewToggle">
+      <button type="button" data-view="card" class="active">カード</button>
+      <button type="button" data-view="list">一覧</button>
+    </div>
+  </div>
   <div class="count" id="count"></div>
   <div class="list" id="list"></div>
 </div>
@@ -434,6 +529,15 @@ const TYPE_LABEL = { monthly: '月次', onetime: '単発' };
 let tasks = [];
 let currentFilter = 'active';
 let selectedType = 'onetime';
+let viewMode = 'card';
+
+document.querySelectorAll('#viewToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    viewMode = b.dataset.view;
+    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.toggle('active', x === b));
+    render();
+  });
+});
 
 function setSelectedType(type) {
   selectedType = type;
@@ -571,7 +675,7 @@ function populateSelect(selectId, newInputId, values, placeholderLabel) {
 }
 
 function updateSelectOptions() {
-  populateSelect('methodSelect', 'methodInput', tasks.map(t => t.method), '達成方法');
+  populateSelect('methodSelect', 'methodInput', tasks.map(t => t.method), '方法');
   populateSelect('tagSelect', 'tagInput', tasks.map(t => t.tag), 'タグ');
 }
 
@@ -623,6 +727,120 @@ function showConfirmModal(message, onConfirm) {
   document.body.appendChild(overlay);
 }
 
+function openEditModal(task) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const box = document.createElement('div');
+  box.className = 'modal-box modal-box-wide';
+
+  const heading = document.createElement('p');
+  heading.textContent = 'タスクを編集';
+  box.appendChild(heading);
+
+  const form = document.createElement('div');
+  form.className = 'edit-form';
+
+  const titleInput = document.createElement('input');
+  titleInput.type = 'text'; titleInput.value = task.title; titleInput.placeholder = 'タイトル';
+  form.appendChild(titleInput);
+
+  let editType = task.type;
+  const typeRow = document.createElement('div');
+  typeRow.className = 'type-toggle';
+  const oneBtn = document.createElement('button');
+  oneBtn.type = 'button'; oneBtn.textContent = '単発';
+  oneBtn.className = 't-onetime' + (task.type === 'onetime' ? ' active' : '');
+  const monBtn = document.createElement('button');
+  monBtn.type = 'button'; monBtn.textContent = '月次';
+  monBtn.className = 't-monthly' + (task.type === 'monthly' ? ' active' : '');
+  oneBtn.onclick = () => {
+    editType = 'onetime';
+    oneBtn.classList.add('active'); monBtn.classList.remove('active');
+    dueInput.style.display = ''; monthDayInput.style.display = 'none';
+  };
+  monBtn.onclick = () => {
+    editType = 'monthly';
+    monBtn.classList.add('active'); oneBtn.classList.remove('active');
+    dueInput.style.display = 'none'; monthDayInput.style.display = '';
+  };
+  typeRow.appendChild(oneBtn); typeRow.appendChild(monBtn);
+  form.appendChild(typeRow);
+
+  const dueInput = document.createElement('input');
+  dueInput.type = 'date'; dueInput.value = task.due || '';
+  dueInput.style.display = task.type === 'monthly' ? 'none' : '';
+  form.appendChild(dueInput);
+
+  const monthDayInput = document.createElement('input');
+  monthDayInput.type = 'number'; monthDayInput.min = 1; monthDayInput.max = 31; monthDayInput.placeholder = '毎月◯日';
+  monthDayInput.value = task.monthDay || '';
+  monthDayInput.style.display = task.type === 'monthly' ? '' : 'none';
+  form.appendChild(monthDayInput);
+
+  const prioritySelect = document.createElement('select');
+  prioritySelect.innerHTML = `<option value="medium">優先度: A(重要)</option><option value="high">優先度: S(最優先)</option><option value="low">優先度: B(通常)</option>`;
+  prioritySelect.value = task.priority;
+  form.appendChild(prioritySelect);
+
+  const methodInput = document.createElement('input');
+  methodInput.type = 'text'; methodInput.placeholder = '方法'; methodInput.value = task.method || '';
+  methodInput.setAttribute('list', 'methodOptionsEdit');
+  const methodDatalist = document.createElement('datalist');
+  methodDatalist.id = 'methodOptionsEdit';
+  [...new Set(tasks.map(t => t.method).filter(Boolean))].forEach(m => {
+    const o = document.createElement('option'); o.value = m; methodDatalist.appendChild(o);
+  });
+  form.appendChild(methodInput);
+  form.appendChild(methodDatalist);
+
+  const tagInput = document.createElement('input');
+  tagInput.type = 'text'; tagInput.placeholder = 'タグ'; tagInput.value = task.tag || '';
+  tagInput.setAttribute('list', 'tagOptionsEdit');
+  const tagDatalist = document.createElement('datalist');
+  tagDatalist.id = 'tagOptionsEdit';
+  [...new Set(tasks.map(t => t.tag).filter(Boolean))].forEach(t => {
+    const o = document.createElement('option'); o.value = t; tagDatalist.appendChild(o);
+  });
+  form.appendChild(tagInput);
+  form.appendChild(tagDatalist);
+
+  const submitToInput = document.createElement('input');
+  submitToInput.type = 'text'; submitToInput.placeholder = '提出先'; submitToInput.value = task.submitTo || '';
+  form.appendChild(submitToInput);
+
+  box.appendChild(form);
+
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'modal-cancel'; cancelBtn.textContent = 'キャンセル';
+  cancelBtn.onclick = () => overlay.remove();
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'modal-confirm'; saveBtn.textContent = '保存';
+  saveBtn.onclick = () => {
+    const newTitle = titleInput.value.trim();
+    if (!newTitle) { titleInput.focus(); return; }
+    task.title = newTitle;
+    task.type = editType;
+    task.due = dueInput.value;
+    task.monthDay = monthDayInput.value ? parseInt(monthDayInput.value, 10) : null;
+    task.priority = prioritySelect.value;
+    task.method = methodInput.value.trim();
+    task.tag = tagInput.value.trim();
+    task.submitTo = submitToInput.value.trim();
+    overlay.remove();
+    saveTasks();
+    render();
+  };
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+  box.appendChild(actions);
+
+  overlay.appendChild(box);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function playStampEffect(ticketEl, onDone) {
   ticketEl.classList.add('stamping');
   const stamp = document.createElement('div');
@@ -646,6 +864,7 @@ function render() {
 
   count.textContent = `${filtered.length} 件`;
   list.innerHTML = '';
+  list.className = viewMode === 'list' ? '' : 'list';
 
   if (filtered.length === 0) {
     const empty = document.createElement('div');
@@ -655,6 +874,14 @@ function render() {
     return;
   }
 
+  if (viewMode === 'list') {
+    renderTableView(filtered, list);
+  } else {
+    renderCardView(filtered, list);
+  }
+}
+
+function renderCardView(filtered, list) {
   filtered.forEach(task => {
     const ticket = document.createElement('div');
     ticket.className = 'ticket' + (task.done ? ' done' : '');
@@ -709,10 +936,22 @@ function render() {
       tag.textContent = task.tag;
       tagRow.appendChild(tag);
     }
+    if (task.submitTo) {
+      const sTag = document.createElement('span');
+      sTag.className = 'tag';
+      sTag.textContent = `提出先: ${task.submitTo}`;
+      tagRow.appendChild(sTag);
+    }
     main.appendChild(tagRow);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
+    const edit = document.createElement('button');
+    edit.className = 'del';
+    edit.title = '編集';
+    edit.textContent = '✎';
+    edit.onclick = () => openEditModal(task);
+    actions.appendChild(edit);
     const del = document.createElement('button');
     del.className = 'del';
     del.textContent = '✕';
@@ -743,6 +982,105 @@ function render() {
 
     list.appendChild(ticket);
   });
+}
+
+function renderTableView(filtered, list) {
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  const table = document.createElement('table');
+  table.className = 'task-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th></th>
+        <th>タイトル</th>
+        <th>種別</th>
+        <th>締切</th>
+        <th>優先度</th>
+        <th>方法</th>
+        <th>タグ</th>
+        <th>提出先</th>
+        <th></th>
+      </tr>
+    </thead>
+  `;
+  const tbody = document.createElement('tbody');
+
+  filtered.forEach(task => {
+    const tr = document.createElement('tr');
+    if (task.done) tr.classList.add('done');
+
+    const checkTd = document.createElement('td');
+    const check = document.createElement('button');
+    check.className = 'row-check' + (task.done ? ' checked' : '');
+    check.onclick = () => {
+      if (!task.done) {
+        task.done = true;
+        saveTasks();
+        render();
+      } else {
+        showConfirmModal('このタスクを未完了の状態に戻しますか?', () => {
+          task.done = false;
+          saveTasks();
+          render();
+        });
+      }
+    };
+    checkTd.appendChild(check);
+    tr.appendChild(checkTd);
+
+    const titleTd = document.createElement('td');
+    titleTd.className = 'title-cell';
+    titleTd.textContent = task.title + (task.done ? ' 済' : '');
+    tr.appendChild(titleTd);
+
+    const typeTd = document.createElement('td');
+    typeTd.textContent = TYPE_LABEL[task.type];
+    tr.appendChild(typeTd);
+
+    const dueTd = document.createElement('td');
+    dueTd.textContent = fmtDue(task);
+    tr.appendChild(dueTd);
+
+    const priTd = document.createElement('td');
+    const pill = document.createElement('span');
+    pill.className = `p-pill p-${task.priority}`;
+    pill.textContent = PRIORITY_LABEL[task.priority];
+    priTd.appendChild(pill);
+    tr.appendChild(priTd);
+
+    const methodTd = document.createElement('td');
+    methodTd.textContent = task.method || '−';
+    tr.appendChild(methodTd);
+
+    const tagTd = document.createElement('td');
+    tagTd.textContent = task.tag || '−';
+    tr.appendChild(tagTd);
+
+    const submitTd = document.createElement('td');
+    submitTd.textContent = task.submitTo || '−';
+    tr.appendChild(submitTd);
+
+    const actionsTd = document.createElement('td');
+    const rowActions = document.createElement('div');
+    rowActions.className = 'row-actions';
+    const edit = document.createElement('button');
+    edit.title = '編集'; edit.textContent = '✎';
+    edit.onclick = () => openEditModal(task);
+    const del = document.createElement('button');
+    del.textContent = '✕';
+    del.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); saveTasks(); render(); };
+    rowActions.appendChild(edit);
+    rowActions.appendChild(del);
+    actionsTd.appendChild(rowActions);
+    tr.appendChild(actionsTd);
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  list.appendChild(wrap);
 }
 
 function icsDateUTC(d) {
@@ -807,10 +1145,11 @@ document.getElementById('addBtn').onclick = () => {
   const monthDay = document.getElementById('monthDayInput').value ? parseInt(document.getElementById('monthDayInput').value, 10) : null;
   const method = readSelectValue('methodSelect', 'methodInput');
   const tag = readSelectValue('tagSelect', 'tagInput');
+  const submitTo = document.getElementById('submitToInput').value.trim();
 
   tasks.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    title, type, priority, due, monthDay, method, tag, done: false,
+    title, type, priority, due, monthDay, method, tag, submitTo, done: false,
   });
   titleEl.value = '';
   document.getElementById('dueInput').value = '';
@@ -821,6 +1160,7 @@ document.getElementById('addBtn').onclick = () => {
   document.getElementById('tagInput').value = '';
   document.getElementById('tagInput').style.display = 'none';
   document.getElementById('tagSelect').value = '';
+  document.getElementById('submitToInput').value = '';
   saveTasks();
   render();
 };
