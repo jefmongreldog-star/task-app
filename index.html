@@ -169,65 +169,70 @@
     color: var(--card);
   }
 
-  .list { display: flex; flex-direction: column; gap: 12px; }
+  .list { display: flex; flex-direction: column; gap: 7px; }
 
   .ticket {
     display: flex;
     position: relative;
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
     border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 1px 0 var(--line);
     transition: opacity 0.2s;
+    min-height: 0;
   }
   .ticket.done { opacity: 0.75; }
+  .ticket.type-onetime { border-left-color: var(--slate); }
+  .ticket.type-monthly { border-left-color: var(--amber); }
 
   .stub {
-    width: 76px;
+    width: 60px;
     flex-shrink: 0;
     background: var(--slate-soft);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     position: relative;
     border-right: 1px dashed var(--line);
   }
   .stub::before, .stub::after {
     content: "";
     position: absolute;
-    width: 12px; height: 12px;
+    width: 10px; height: 10px;
     background: var(--paper);
     border-radius: 50%;
-    right: -6px;
+    right: -5px;
   }
-  .stub::before { top: -6px; }
-  .stub::after { bottom: -6px; }
-  .stub.p-high { background: #F1DED3; }
-  .stub.p-medium { background: var(--slate-soft); }
-  .stub.p-low { background: var(--teal-soft); }
+  .stub::before { top: -5px; }
+  .stub::after { bottom: -5px; }
+  .stub.p-high { background: #F5DBD7; }
+  .stub.p-medium { background: #F7ECC4; }
+  .stub.p-low { background: #D8E5F2; }
+  .stub.p-monthly { background: #DCEEDD; }
   .stub-letter {
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: 16px;
   }
-  .p-high .stub-letter { color: var(--clay); }
-  .p-medium .stub-letter { color: var(--slate); }
-  .p-low .stub-letter { color: var(--teal); }
+  .p-high .stub-letter { color: #B23B2E; }
+  .p-medium .stub-letter { color: #A9781C; }
+  .p-low .stub-letter { color: #2F5D8A; }
+  .p-monthly .stub-letter { color: #3C7A4E; }
   .stub-date {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 9.5px;
     color: var(--ink-soft);
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.2;
   }
 
-  .body { flex: 1; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+  .body { flex: 1; padding: 7px 12px; display: flex; align-items: center; gap: 10px; min-width: 0; }
   .check {
-    margin-top: 3px;
-    width: 18px; height: 18px;
+    width: 16px; height: 16px;
     border: 1.5px solid var(--ink-soft);
     border-radius: 50%;
     background: transparent;
@@ -239,29 +244,29 @@
   .check.checked::after {
     content: "";
     position: absolute;
-    left: 5px; top: 1.5px;
+    left: 4px; top: 1px;
     width: 4px; height: 8px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }
-  .task-main { flex: 1; min-width: 0; }
-  .task-title { font-size: 15px; color: var(--ink); word-break: break-word; }
+  .task-main { flex: 1; min-width: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
+  .task-title { font-size: 14px; color: var(--ink); word-break: break-word; }
   .ticket.done .task-title { text-decoration: line-through; color: var(--ink-soft); }
-  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+  .tag-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 0; }
   .tag {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 10px;
     color: var(--ink-soft);
     background: var(--paper-deep);
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 999px;
   }
   .tag.type-monthly { background: var(--amber-soft); color: #8A5F1F; }
   .tag.type-onetime { background: var(--slate-soft); color: var(--slate); }
 
-  .actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .actions { display: flex; flex-direction: row; align-items: center; gap: 6px; flex-shrink: 0; padding-right: 10px; }
   .del, .ics-btn {
     background: none;
     border: none;
@@ -272,30 +277,31 @@
   .del { color: var(--ink-soft); font-size: 16px; }
   .del:hover { color: var(--clay); }
   .ics-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
+    font-size: 13px;
     color: var(--teal);
     border: 1px solid var(--teal);
-    border-radius: 999px;
-    padding: 3px 9px;
-    white-space: nowrap;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
   }
   .ics-btn:hover { background: var(--teal-soft); }
 
   /* hanko stamp */
   .stamp {
     position: absolute;
-    top: 10px; right: 84px;
-    width: 46px; height: 46px;
-    border: 2.5px solid var(--seal);
-    border-radius: 6px;
+    top: 50%; right: 84px;
+    width: 32px; height: 32px;
+    margin-top: -16px;
+    border: 2px solid var(--seal);
+    border-radius: 5px;
     color: var(--seal);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 20px;
+    font-size: 14px;
     transform: rotate(-8deg);
     opacity: 0.85;
     mix-blend-mode: multiply;
@@ -304,9 +310,9 @@
       radial-gradient(circle at 30% 30%, transparent 60%, rgba(168,59,50,0.08) 100%);
   }
   @media (max-width: 480px) {
-    .stamp { right: 8px; top: 4px; width: 38px; height: 38px; font-size: 16px; }
+    .stamp { right: 6px; top: 50%; margin-top: -14px; width: 28px; height: 28px; font-size: 12px; }
   }
-  .stamp.stamp-anim {
+  .stamp-anim {
     animation: stampHit 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
   }
   @keyframes stampHit {
@@ -436,9 +442,13 @@
     transform: rotate(45deg);
   }
   .p-pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
-  .p-pill.p-high { background: #F1DED3; color: var(--clay); }
-  .p-pill.p-medium { background: var(--slate-soft); color: var(--slate); }
-  .p-pill.p-low { background: var(--teal-soft); color: var(--teal); }
+  .p-pill.p-high { background: #F5DBD7; color: #B23B2E; }
+  .p-pill.p-medium { background: #F7ECC4; color: #A9781C; }
+  .p-pill.p-low { background: #D8E5F2; color: #2F5D8A; }
+  .p-pill.p-monthly { background: #DCEEDD; color: #3C7A4E; }
+  .type-pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+  .type-pill.type-onetime { background: var(--slate-soft); color: var(--slate); }
+  .type-pill.type-monthly { background: var(--amber-soft); color: #8A5F1F; }
   .row-actions { display: flex; gap: 4px; }
   .row-actions button { background: none; border: none; cursor: pointer; color: var(--ink-soft); font-size: 13px; padding: 2px 4px; }
   .row-actions button:hover { color: var(--clay); }
@@ -477,6 +487,23 @@
     padding: 1px 6px;
     transform: rotate(-6deg);
     opacity: 0.85;
+  }
+  .check-wrap { position: relative; display: inline-flex; }
+  .stamp-pop {
+    width: 34px; height: 34px;
+    border: 2px solid var(--seal);
+    border-radius: 5px;
+    color: var(--seal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 14px;
+    opacity: 0.85;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 999;
   }
 </style>
 </head>
@@ -530,9 +557,9 @@
         <select id="excludeMonthsInput" class="month-select" multiple></select>
       </div>
       <select id="priorityInput">
-        <option value="medium">優先度: A(重要)</option>
-        <option value="high">優先度: S(最優先)</option>
-        <option value="low">優先度: B(通常)</option>
+        <option value="high">優先度: A</option>
+        <option value="medium">優先度: B</option>
+        <option value="low">優先度: C</option>
       </select>
     </div>
     <div class="add-row3">
@@ -563,7 +590,7 @@ const FILTERS = [
   { key: 'all', label: 'すべて' },
   { key: 'done', label: '完了' },
 ];
-const PRIORITY_LABEL = { high: 'S', medium: 'A', low: 'B' };
+const PRIORITY_LABEL = { high: 'A', medium: 'B', low: 'C' };
 const TYPE_LABEL = { monthly: '月次', onetime: '単発' };
 
 let tasks = [];
@@ -588,6 +615,7 @@ function setSelectedType(type) {
   document.getElementById('dueInput').style.display = isMonthly ? 'none' : '';
   document.getElementById('monthDayInput').style.display = isMonthly ? '' : 'none';
   document.getElementById('excludeMonthsWrap').style.display = isMonthly ? '' : 'none';
+  document.getElementById('priorityInput').style.display = isMonthly ? 'none' : '';
 }
 
 function populateMonthSelect(selectEl) {
@@ -817,12 +845,14 @@ function openEditModal(task) {
     oneBtn.classList.add('active'); monBtn.classList.remove('active');
     dueInput.style.display = ''; monthDayInput.style.display = 'none';
     excludeWrap.style.display = 'none';
+    prioritySelect.style.display = '';
   };
   monBtn.onclick = () => {
     editType = 'monthly';
     monBtn.classList.add('active'); oneBtn.classList.remove('active');
     dueInput.style.display = 'none'; monthDayInput.style.display = '';
     excludeWrap.style.display = '';
+    prioritySelect.style.display = 'none';
   };
   typeRow.appendChild(oneBtn); typeRow.appendChild(monBtn);
   form.appendChild(typeRow);
@@ -855,8 +885,9 @@ function openEditModal(task) {
   form.appendChild(excludeWrap);
 
   const prioritySelect = document.createElement('select');
-  prioritySelect.innerHTML = `<option value="medium">優先度: A(重要)</option><option value="high">優先度: S(最優先)</option><option value="low">優先度: B(通常)</option>`;
+  prioritySelect.innerHTML = `<option value="high">優先度: A</option><option value="medium">優先度: B</option><option value="low">優先度: C</option>`;
   prioritySelect.value = task.priority;
+  prioritySelect.style.display = task.type === 'monthly' ? 'none' : '';
   form.appendChild(prioritySelect);
 
   const methodInput = document.createElement('input');
@@ -917,6 +948,18 @@ function openEditModal(task) {
   overlay.appendChild(box);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+function playTableStampEffect(anchorEl, onDone) {
+  const rect = anchorEl.getBoundingClientRect();
+  const stamp = document.createElement('span');
+  stamp.className = 'stamp-pop stamp-anim';
+  stamp.textContent = '済';
+  stamp.style.position = 'fixed';
+  stamp.style.left = `${rect.left + rect.width / 2 - 17}px`;
+  stamp.style.top = `${rect.top + rect.height / 2 - 17}px`;
+  document.body.appendChild(stamp);
+  setTimeout(() => { stamp.remove(); onDone(); }, 550);
 }
 
 function playStampEffect(ticketEl, onDone) {
@@ -990,12 +1033,12 @@ function makeDraggable(el, task) {
 function renderCardView(filtered, list) {
   filtered.forEach(task => {
     const ticket = document.createElement('div');
-    ticket.className = 'ticket' + (task.done ? ' done' : '');
+    ticket.className = `ticket type-${task.type === 'monthly' ? 'monthly' : 'onetime'}` + (task.done ? ' done' : '');
     makeDraggable(ticket, task);
 
     const stub = document.createElement('div');
-    stub.className = `stub p-${task.priority}`;
-    stub.innerHTML = `<div class="stub-letter">${PRIORITY_LABEL[task.priority]}</div><div class="stub-date">${fmtDue(task)}</div>`;
+    stub.className = task.type === 'monthly' ? 'stub p-monthly' : `stub p-${task.priority}`;
+    stub.innerHTML = `<div class="stub-letter">${task.type === 'monthly' ? '月' : PRIORITY_LABEL[task.priority]}</div><div class="stub-date">${fmtDue(task)}</div>`;
 
     const body = document.createElement('div');
     body.className = 'body';
@@ -1080,7 +1123,8 @@ function renderCardView(filtered, list) {
     if (dueDate) {
       const icsBtn = document.createElement('button');
       icsBtn.className = 'ics-btn';
-      icsBtn.textContent = 'カレンダーに追加';
+      icsBtn.textContent = '📅';
+      icsBtn.title = 'カレンダーに追加';
       icsBtn.onclick = () => downloadIcs(task, dueDate);
       actions.appendChild(icsBtn);
     }
@@ -1140,13 +1184,24 @@ function renderTableView(filtered, list) {
     tr.appendChild(handleTd);
 
     const checkTd = document.createElement('td');
+    const checkWrap = document.createElement('span');
+    checkWrap.className = 'check-wrap';
     const check = document.createElement('button');
     check.className = 'row-check' + (task.done ? ' checked' : '');
+    const statusTd = document.createElement('td');
+    if (task.done) {
+      const stamp = document.createElement('span');
+      stamp.className = 'table-stamp';
+      stamp.textContent = '済';
+      statusTd.appendChild(stamp);
+    }
     check.onclick = () => {
       if (!task.done) {
-        task.done = true;
-        saveTasks();
-        render();
+        playTableStampEffect(checkWrap, () => {
+          task.done = true;
+          saveTasks();
+          render();
+        });
       } else {
         showConfirmModal('このタスクを未完了の状態に戻しますか?', () => {
           task.done = false;
@@ -1155,7 +1210,8 @@ function renderTableView(filtered, list) {
         });
       }
     };
-    checkTd.appendChild(check);
+    checkWrap.appendChild(check);
+    checkTd.appendChild(checkWrap);
     tr.appendChild(checkTd);
 
     const titleTd = document.createElement('td');
@@ -1164,7 +1220,10 @@ function renderTableView(filtered, list) {
     tr.appendChild(titleTd);
 
     const typeTd = document.createElement('td');
-    typeTd.textContent = TYPE_LABEL[task.type];
+    const typePill = document.createElement('span');
+    typePill.className = `type-pill type-${task.type === 'monthly' ? 'monthly' : 'onetime'}`;
+    typePill.textContent = TYPE_LABEL[task.type];
+    typeTd.appendChild(typePill);
     tr.appendChild(typeTd);
 
     const dueTd = document.createElement('td');
@@ -1173,8 +1232,13 @@ function renderTableView(filtered, list) {
 
     const priTd = document.createElement('td');
     const pill = document.createElement('span');
-    pill.className = `p-pill p-${task.priority}`;
-    pill.textContent = PRIORITY_LABEL[task.priority];
+    if (task.type === 'monthly') {
+      pill.className = 'p-pill p-monthly';
+      pill.textContent = '月';
+    } else {
+      pill.className = `p-pill p-${task.priority}`;
+      pill.textContent = PRIORITY_LABEL[task.priority];
+    }
     priTd.appendChild(pill);
     tr.appendChild(priTd);
 
@@ -1190,13 +1254,6 @@ function renderTableView(filtered, list) {
     submitTd.textContent = task.submitTo || '−';
     tr.appendChild(submitTd);
 
-    const statusTd = document.createElement('td');
-    if (task.done) {
-      const stamp = document.createElement('span');
-      stamp.className = 'table-stamp';
-      stamp.textContent = '済';
-      statusTd.appendChild(stamp);
-    }
     tr.appendChild(statusTd);
 
     const actionsTd = document.createElement('td');
