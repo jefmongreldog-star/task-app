@@ -418,6 +418,18 @@
     white-space: nowrap;
   }
   table.task-table td.title-cell { white-space: normal; min-width: 140px; }
+  table.task-table td.stub-td { padding: 4px 6px; }
+  .stub.stub-mini {
+    width: 38px;
+    min-width: 38px;
+    height: 34px;
+    border-radius: 4px;
+    border-right: none;
+    gap: 0;
+  }
+  .stub.stub-mini::before, .stub.stub-mini::after { display: none; }
+  .stub.stub-mini .stub-letter { font-size: 13px; }
+  .stub.stub-mini .stub-date { font-size: 8px; }
   table.task-table tr:last-child td { border-bottom: none; }
   table.task-table tr.done td { color: var(--ink-soft); }
   table.task-table tr.done td.title-cell { text-decoration: line-through; }
@@ -572,10 +584,6 @@
 
   <div class="view-row">
     <div class="filters" id="filters"></div>
-    <div class="view-toggle" id="viewToggle">
-      <button type="button" data-view="card" class="active">カード</button>
-      <button type="button" data-view="list">一覧</button>
-    </div>
   </div>
   <div class="count" id="count"></div>
   <div class="list" id="list"></div>
@@ -596,15 +604,6 @@ const TYPE_LABEL = { monthly: '月次', onetime: '単発' };
 let tasks = [];
 let currentFilter = 'active';
 let selectedType = 'onetime';
-let viewMode = 'card';
-
-document.querySelectorAll('#viewToggle button').forEach(b => {
-  b.addEventListener('click', () => {
-    viewMode = b.dataset.view;
-    document.querySelectorAll('#viewToggle button').forEach(x => x.classList.toggle('active', x === b));
-    render();
-  });
-});
 
 function setSelectedType(type) {
   selectedType = type;
@@ -620,12 +619,13 @@ function setSelectedType(type) {
 
 function populateMonthSelect(selectEl) {
   selectEl.innerHTML = '';
-  for (let m = 1; m <= 12; m++) {
+  const order = [4,5,6,7,8,9,10,11,12,1,2,3];
+  order.forEach(m => {
     const o = document.createElement('option');
     o.value = m;
     o.textContent = `${m}月`;
     selectEl.appendChild(o);
-  }
+  });
 }
 populateMonthSelect(document.getElementById('excludeMonthsInput'));
 
@@ -962,15 +962,6 @@ function playTableStampEffect(anchorEl, onDone) {
   setTimeout(() => { stamp.remove(); onDone(); }, 550);
 }
 
-function playStampEffect(ticketEl, onDone) {
-  ticketEl.classList.add('stamping');
-  const stamp = document.createElement('div');
-  stamp.className = 'stamp stamp-anim';
-  stamp.textContent = '済';
-  ticketEl.appendChild(stamp);
-  setTimeout(onDone, 550);
-}
-
 function render() {
   renderFilters();
   renderProgress();
@@ -985,7 +976,6 @@ function render() {
 
   count.textContent = `${filtered.length} 件`;
   list.innerHTML = '';
-  list.className = viewMode === 'list' ? '' : 'list';
 
   if (filtered.length === 0) {
     const empty = document.createElement('div');
@@ -995,11 +985,7 @@ function render() {
     return;
   }
 
-  if (viewMode === 'list') {
-    renderTableView(filtered, list);
-  } else {
-    renderCardView(filtered, list);
-  }
+  renderTableView(filtered, list);
 }
 
 let draggedTaskId = null;
@@ -1031,122 +1017,6 @@ function makeDraggable(el, task) {
   el.addEventListener('dragend', () => { draggedTaskId = null; });
 }
 
-function renderCardView(filtered, list) {
-  filtered.forEach(task => {
-    const ticket = document.createElement('div');
-    ticket.className = `ticket type-${task.type === 'monthly' ? 'monthly' : 'onetime'}` + (task.done ? ' done' : '');
-    makeDraggable(ticket, task);
-
-    const stub = document.createElement('div');
-    stub.className = task.type === 'monthly' ? 'stub p-monthly' : `stub p-${task.priority}`;
-    stub.innerHTML = `<div class="stub-letter">${task.type === 'monthly' ? '月' : PRIORITY_LABEL[task.priority]}</div><div class="stub-date">${fmtDue(task)}</div>`;
-
-    const body = document.createElement('div');
-    body.className = 'body';
-
-    const check = document.createElement('button');
-    check.className = 'check' + (task.done ? ' checked' : '');
-    check.onclick = () => {
-      if (!task.done) {
-        playStampEffect(ticket, () => {
-          task.done = true;
-          saveTasks();
-          render();
-        });
-      } else {
-        showConfirmModal('このタスクを未完了の状態に戻しますか?', () => {
-          task.done = false;
-          saveTasks();
-          render();
-        });
-      }
-    };
-
-    const main = document.createElement('div');
-    main.className = 'task-main';
-    const title = document.createElement('div');
-    title.className = 'task-title';
-    title.textContent = task.title;
-    main.appendChild(title);
-
-    const tagRow = document.createElement('div');
-    tagRow.className = 'tag-row';
-    const typeTag = document.createElement('span');
-    typeTag.className = `tag type-${task.type === 'monthly' ? 'monthly' : 'onetime'}`;
-    typeTag.textContent = TYPE_LABEL[task.type];
-    tagRow.appendChild(typeTag);
-    if (task.method) {
-      const mTag = document.createElement('span');
-      mTag.className = 'tag';
-      mTag.textContent = task.method;
-      tagRow.appendChild(mTag);
-    }
-    if (task.tag) {
-      const tag = document.createElement('span');
-      tag.className = 'tag';
-      tag.textContent = task.tag;
-      tagRow.appendChild(tag);
-    }
-    if (task.submitTo) {
-      const sTag = document.createElement('span');
-      sTag.className = 'tag';
-      sTag.textContent = `提出先: ${task.submitTo}`;
-      tagRow.appendChild(sTag);
-    }
-    if (task.type === 'monthly' && task.excludeMonths && task.excludeMonths.length) {
-      const exTag = document.createElement('span');
-      exTag.className = 'tag';
-      exTag.textContent = `${task.excludeMonths.slice().sort((a,b)=>a-b).join('・')}月は除外`;
-      tagRow.appendChild(exTag);
-    }
-    main.appendChild(tagRow);
-
-    const actions = document.createElement('div');
-    actions.className = 'actions';
-    const handle = document.createElement('span');
-    handle.className = 'drag-handle';
-    handle.title = 'ドラッグで並べ替え';
-    handle.textContent = '⋮⋮';
-    actions.appendChild(handle);
-    const edit = document.createElement('button');
-    edit.className = 'del';
-    edit.title = '編集';
-    edit.textContent = '✎';
-    edit.onclick = () => openEditModal(task);
-    actions.appendChild(edit);
-    const del = document.createElement('button');
-    del.className = 'del';
-    del.textContent = '✕';
-    del.onclick = () => { tasks = tasks.filter(t => t.id !== task.id); saveTasks(); render(); };
-    actions.appendChild(del);
-
-    const dueDate = resolveDueDate(task);
-    if (dueDate) {
-      const icsBtn = document.createElement('button');
-      icsBtn.className = 'ics-btn';
-      icsBtn.textContent = '📅';
-      icsBtn.title = 'カレンダーに追加';
-      icsBtn.onclick = () => downloadIcs(task, dueDate);
-      actions.appendChild(icsBtn);
-    }
-
-    body.appendChild(check);
-    body.appendChild(main);
-    ticket.appendChild(stub);
-    ticket.appendChild(body);
-    ticket.appendChild(actions);
-
-    if (task.done) {
-      const stamp = document.createElement('div');
-      stamp.className = 'stamp';
-      stamp.textContent = '済';
-      ticket.appendChild(stamp);
-    }
-
-    list.appendChild(ticket);
-  });
-}
-
 function renderTableView(filtered, list) {
   const wrap = document.createElement('div');
   wrap.className = 'table-wrap';
@@ -1157,10 +1027,9 @@ function renderTableView(filtered, list) {
       <tr>
         <th></th>
         <th></th>
+        <th></th>
         <th>タイトル</th>
         <th>種別</th>
-        <th>締切</th>
-        <th>優先度</th>
         <th>方法</th>
         <th>タグ</th>
         <th>提出先</th>
@@ -1175,6 +1044,14 @@ function renderTableView(filtered, list) {
     const tr = document.createElement('tr');
     if (task.done) tr.classList.add('done');
     makeDraggable(tr, task);
+
+    const stubTd = document.createElement('td');
+    stubTd.className = 'stub-td';
+    const stub = document.createElement('div');
+    stub.className = task.type === 'monthly' ? 'stub stub-mini p-monthly' : `stub stub-mini p-${task.priority}`;
+    stub.innerHTML = `<div class="stub-letter">${task.type === 'monthly' ? '月' : PRIORITY_LABEL[task.priority]}</div><div class="stub-date">${fmtDue(task)}</div>`;
+    stubTd.appendChild(stub);
+    tr.appendChild(stubTd);
 
     const handleTd = document.createElement('td');
     const handle = document.createElement('span');
@@ -1226,22 +1103,6 @@ function renderTableView(filtered, list) {
     typePill.textContent = TYPE_LABEL[task.type];
     typeTd.appendChild(typePill);
     tr.appendChild(typeTd);
-
-    const dueTd = document.createElement('td');
-    dueTd.textContent = fmtDue(task);
-    tr.appendChild(dueTd);
-
-    const priTd = document.createElement('td');
-    const pill = document.createElement('span');
-    if (task.type === 'monthly') {
-      pill.className = 'p-pill p-monthly';
-      pill.textContent = '月';
-    } else {
-      pill.className = `p-pill p-${task.priority}`;
-      pill.textContent = PRIORITY_LABEL[task.priority];
-    }
-    priTd.appendChild(pill);
-    tr.appendChild(priTd);
 
     const methodTd = document.createElement('td');
     methodTd.textContent = task.method || '−';
