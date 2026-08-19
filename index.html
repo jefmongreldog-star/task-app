@@ -556,8 +556,8 @@
       <input type="text" id="titleInput" placeholder="なにをする?" maxlength="120">
     </div>
     <div class="add-row2">
-      <select id="tagSelect"></select>
-      <input type="text" id="tagInput" placeholder="新しいタグを入力" style="display:none; width:110px;">
+      <select id="methodSelect"></select>
+      <input type="text" id="methodInput" placeholder="新しい方法を入力" style="display:none; width:150px;">
       <div class="type-toggle" id="typeToggle">
         <button type="button" class="t-onetime active" data-type="onetime">単発</button>
         <button type="button" class="t-monthly" data-type="monthly">月次</button>
@@ -575,8 +575,8 @@
       </select>
     </div>
     <div class="add-row3">
-      <select id="methodSelect"></select>
-      <input type="text" id="methodInput" placeholder="新しい方法を入力" style="display:none; width:150px;">
+      <select id="tagSelect"></select>
+      <input type="text" id="tagInput" placeholder="新しいタグを入力" style="display:none; width:110px;">
       <input type="text" id="submitToInput" placeholder="提出先(任意)" style="width:130px;">
       <button class="add-btn" id="addBtn">追加する</button>
     </div>
@@ -890,17 +890,6 @@ function openEditModal(task) {
   prioritySelect.style.display = task.type === 'monthly' ? 'none' : '';
   form.appendChild(prioritySelect);
 
-  const methodInput = document.createElement('input');
-  methodInput.type = 'text'; methodInput.placeholder = '方法'; methodInput.value = task.method || '';
-  methodInput.setAttribute('list', 'methodOptionsEdit');
-  const methodDatalist = document.createElement('datalist');
-  methodDatalist.id = 'methodOptionsEdit';
-  [...new Set(tasks.map(t => t.method).filter(Boolean))].forEach(m => {
-    const o = document.createElement('option'); o.value = m; methodDatalist.appendChild(o);
-  });
-  form.appendChild(methodInput);
-  form.appendChild(methodDatalist);
-
   const tagInput = document.createElement('input');
   tagInput.type = 'text'; tagInput.placeholder = 'タグ'; tagInput.value = task.tag || '';
   tagInput.setAttribute('list', 'tagOptionsEdit');
@@ -911,6 +900,17 @@ function openEditModal(task) {
   });
   form.appendChild(tagInput);
   form.appendChild(tagDatalist);
+
+  const methodInput = document.createElement('input');
+  methodInput.type = 'text'; methodInput.placeholder = '方法'; methodInput.value = task.method || '';
+  methodInput.setAttribute('list', 'methodOptionsEdit');
+  const methodDatalist = document.createElement('datalist');
+  methodDatalist.id = 'methodOptionsEdit';
+  [...new Set(tasks.map(t => t.method).filter(Boolean))].forEach(m => {
+    const o = document.createElement('option'); o.value = m; methodDatalist.appendChild(o);
+  });
+  form.appendChild(methodInput);
+  form.appendChild(methodDatalist);
 
   const submitToInput = document.createElement('input');
   submitToInput.type = 'text'; submitToInput.placeholder = '提出先'; submitToInput.value = task.submitTo || '';
@@ -1030,8 +1030,8 @@ function renderTableView(filtered, list) {
         <th></th>
         <th>タイトル</th>
         <th>種別</th>
-        <th>方法</th>
         <th>タグ</th>
+        <th>方法</th>
         <th>提出先</th>
         <th>状態</th>
         <th></th>
@@ -1104,13 +1104,13 @@ function renderTableView(filtered, list) {
     typeTd.appendChild(typePill);
     tr.appendChild(typeTd);
 
-    const methodTd = document.createElement('td');
-    methodTd.textContent = task.method || '−';
-    tr.appendChild(methodTd);
-
     const tagTd = document.createElement('td');
     tagTd.textContent = task.tag || '−';
     tr.appendChild(tagTd);
+
+    const methodTd = document.createElement('td');
+    methodTd.textContent = task.method || '−';
+    tr.appendChild(methodTd);
 
     const submitTd = document.createElement('td');
     submitTd.textContent = task.submitTo || '−';
