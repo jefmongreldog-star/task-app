@@ -636,6 +636,24 @@ document.querySelectorAll('#typeToggle button').forEach(b => {
 // Claude上ではwindow.storageを、外部で単体ホスティングした場合はlocalStorageを使う
 const hasClaudeStorage = typeof window.storage !== 'undefined';
 
+function currentYearMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+
+function resetStaleMonthlyCompletions() {
+  const now = currentYearMonth();
+  let changed = false;
+  tasks.forEach(t => {
+    if (t.type === 'monthly' && t.done && t.completedMonth && t.completedMonth !== now) {
+      t.done = false;
+      t.completedMonth = null;
+      changed = true;
+    }
+  });
+  if (changed) saveTasks();
+}
+
 async function loadTasks() {
   try {
     if (hasClaudeStorage) {
@@ -648,6 +666,7 @@ async function loadTasks() {
   } catch (e) {
     tasks = [];
   }
+  resetStaleMonthlyCompletions();
   render();
 }
 
@@ -963,6 +982,7 @@ function playTableStampEffect(anchorEl, onDone) {
 }
 
 function render() {
+  resetStaleMonthlyCompletions();
   renderFilters();
   renderProgress();
   updateSelectOptions();
@@ -1077,12 +1097,14 @@ function renderTableView(filtered, list) {
       if (!task.done) {
         playTableStampEffect(checkWrap, () => {
           task.done = true;
+          if (task.type === 'monthly') task.completedMonth = currentYearMonth();
           saveTasks();
           render();
         });
       } else {
         showConfirmModal('このタスクを未完了の状態に戻しますか?', () => {
           task.done = false;
+          task.completedMonth = null;
           saveTasks();
           render();
         });
